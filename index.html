@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAF9F5" />
+  <title>Уборка</title>
+  <style>
+    :root {
+      --bg: #FAF9F5;
+      --surface: #FFFFFF;
+      --border: #E8E4DA;
+      --text: #3D3929;
+      --text-secondary: #6B6557;
+      --text-muted: #9A9485;
+      --accent: #D97757;
+      --accent-soft: #F5E6DD;
+      --radius: 12px;
+      --gap: 12px;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Полоска дней сверху */
+    .days {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .day {
+      flex: 1;
+      min-width: 0;
+      height: 56px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+      color: var(--text-secondary);
+      font-family: var(--sans);
+      padding: 0;
+    }
+    .day .day-name {
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .day .day-date {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .day.today {
+      border-color: var(--accent);
+    }
+    .day.done {
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
+      color: var(--text);
+    }
+    .day.done .day-date { color: var(--text); }
+    .day.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #FFFFFF;
+    }
+    .day.selected .day-date,
+    .day.selected .day-name { color: #FFFFFF; }
+
+    /* Основной контейнер */
+    main {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .day-header {
+      margin: 4px 0 16px;
+    }
+    .day-header .eyebrow {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .day-header h1 {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: 28px;
+      line-height: 1.15;
+      margin: 4px 0 0;
+      color: var(--text);
+    }
+
+    .tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      user-select: none;
+      min-height: 56px;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .task .checkbox {
+      flex: 0 0 22px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .task .checkbox svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .task .label {
+      flex: 1;
+      font-size: 16px;
+      color: var(--text);
+    }
+    .task.done {
+      background: transparent;
+    }
+    .task.done .checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .task.done .checkbox svg {
+      opacity: 1;
+    }
+    .task.done .label {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      padding: 0 4px;
+    }
+    .progress .bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      transition: width 220ms ease;
+    }
+    .progress .label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* Нижний блок месячных задач */
+    .monthly {
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+    }
+    .monthly h2 {
+      margin: 0 0 10px;
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .monthly-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      max-height: 38vh;
+      overflow-y: auto;
+    }
+    .monthly-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      min-height: 44px;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .monthly-item .checkbox {
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .monthly-item .checkbox svg {
+      width: 11px;
+      height: 11px;
+      opacity: 0;
+    }
+    .monthly-item.done .checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .monthly-item.done .checkbox svg { opacity: 1; }
+    .monthly-item.done .label {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    @media (min-width: 600px) {
+      main { max-width: 640px; margin: 0 auto; width: 100%; }
+      .days { max-width: 640px; margin: 0 auto; width: 100%; }
+      .monthly { max-width: 640px; margin: 0 auto; width: 100%; }
+      .monthly-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="days" id="days" aria-label="Дни недели"></nav>
+
+  <main>
+    <header class="day-header">
+      <div class="eyebrow" id="day-eyebrow"></div>
+      <h1 id="day-title"></h1>
+    </header>
+
+    <div class="tasks" id="tasks"></div>
+
+    <div class="progress">
+      <div class="bar"><span id="progress-fill" style="width: 0%"></span></div>
+      <div class="label" id="progress-label">0 из 0</div>
+    </div>
+  </main>
+
+  <section class="monthly" aria-label="Раз в месяц">
+    <h2>Раз в месяц</h2>
+    <div class="monthly-grid" id="monthly"></div>
+  </section>
+
+  <script src="tasks.js"></script>
+  <script>
+    (function () {
+      const STORAGE_KEY = "cleaning-tracker-v1";
+      const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const DAY_LABELS_SHORT = { Mon: "Пн", Tue: "Вт", Wed: "Ср", Thu: "Чт", Fri: "Пт", Sat: "Сб", Sun: "Вс" };
+      const DAY_LABELS_LONG = { Mon: "Понедельник", Tue: "Вторник", Wed: "Среда", Thu: "Четверг", Fri: "Пятница", Sat: "Суббота", Sun: "Воскресенье" };
+
+      // --- Текущая дата / ключи периода ---
+      function getISOWeekKey(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+      }
+      function getMonthKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      }
+      function getDayKey(date) {
+        // JS getDay(): 0=Sun..6=Sat. Преобразуем в Mon-первый.
+        const js = date.getDay();
+        return DAY_KEYS[(js + 6) % 7];
+      }
+      function getMondayOfWeek(date) {
+        const d = new Date(date);
+        const js = d.getDay();
+        const offset = (js + 6) % 7; // дней назад до понедельника
+        d.setDate(d.getDate() - offset);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      // --- Состояние в localStorage ---
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return { weekKey: "", monthKey: "", daily: {}, monthly: {} };
+          const parsed = JSON.parse(raw);
+          return {
+            weekKey: parsed.weekKey || "",
+            monthKey: parsed.monthKey || "",
+            daily: parsed.daily || {},
+            monthly: parsed.monthly || {},
+          };
+        } catch (e) {
+          return { weekKey: "", monthKey: "", daily: {}, monthly: {} };
+        }
+      }
+      function saveState(state) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      const now = new Date();
+      const currentWeekKey = getISOWeekKey(now);
+      const currentMonthKey = getMonthKey(now);
+      const todayKey = getDayKey(now);
+      const monday = getMondayOfWeek(now);
+
+      const state = loadState();
+      if (state.weekKey !== currentWeekKey) {
+        state.weekKey = currentWeekKey;
+        state.daily = {};
+      }
+      if (state.monthKey !== currentMonthKey) {
+        state.monthKey = currentMonthKey;
+        state.monthly = {};
+      }
+      saveState(state);
+
+      let selectedDay = todayKey;
+
+      // --- Рендер полоски дней ---
+      const daysEl = document.getElementById("days");
+      function renderDays() {
+        daysEl.innerHTML = "";
+        DAY_KEYS.forEach((key, i) => {
+          const date = new Date(monday);
+          date.setDate(monday.getDate() + i);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "day";
+          if (key === todayKey) btn.classList.add("today");
+          if (key === selectedDay) btn.classList.add("selected");
+          const dayItems = (WEEKLY_TASKS[key] && WEEKLY_TASKS[key].items) || [];
+          const allDone = dayItems.length > 0 && dayItems.every((_, idx) => state.daily[`${key}-${idx}`]);
+          if (allDone) btn.classList.add("done");
+          btn.innerHTML = `
+            <span class="day-name">${DAY_LABELS_SHORT[key]}</span>
+            <span class="day-date">${date.getDate()}</span>
+          `;
+          btn.addEventListener("click", () => {
+            selectedDay = key;
+            renderDays();
+            renderTasks();
+          });
+          daysEl.appendChild(btn);
+        });
+      }
+
+      // --- Рендер задач дня ---
+      const eyebrowEl = document.getElementById("day-eyebrow");
+      const titleEl = document.getElementById("day-title");
+      const tasksEl = document.getElementById("tasks");
+      const progressFill = document.getElementById("progress-fill");
+      const progressLabel = document.getElementById("progress-label");
+
+      function checkSvg() {
+        return `<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+
+      function renderTasks() {
+        const day = WEEKLY_TASKS[selectedDay];
+        if (!day) {
+          eyebrowEl.textContent = "";
+          titleEl.textContent = "Нет данных";
+          tasksEl.innerHTML = "";
+          progressFill.style.width = "0%";
+          progressLabel.textContent = "0 из 0";
+          return;
+        }
+        eyebrowEl.textContent = DAY_LABELS_LONG[selectedDay];
+        titleEl.textContent = day.title;
+
+        tasksEl.innerHTML = "";
+        day.items.forEach((text, idx) => {
+          const id = `${selectedDay}-${idx}`;
+          const done = !!state.daily[id];
+          const item = document.createElement("div");
+          item.className = "task" + (done ? " done" : "");
+          item.setAttribute("role", "button");
+          item.setAttribute("tabindex", "0");
+          item.innerHTML = `
+            <div class="checkbox">${checkSvg()}</div>
+            <div class="label"></div>
+          `;
+          item.querySelector(".label").textContent = text;
+          const toggle = () => {
+            state.daily[id] = !state.daily[id];
+            if (!state.daily[id]) delete state.daily[id];
+            saveState(state);
+            renderTasks();
+            renderDays();
+          };
+          item.addEventListener("click", toggle);
+          item.addEventListener("keydown", (e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              toggle();
+            }
+          });
+          tasksEl.appendChild(item);
+        });
+
+        const total = day.items.length;
+        const doneCount = day.items.reduce((acc, _, idx) => acc + (state.daily[`${selectedDay}-${idx}`] ? 1 : 0), 0);
+        progressFill.style.width = total ? `${(doneCount / total) * 100}%` : "0%";
+        progressLabel.textContent = `${doneCount} из ${total}`;
+      }
+
+      // --- Рендер ежемесячных задач ---
+      const monthlyEl = document.getElementById("monthly");
+      function renderMonthly() {
+        monthlyEl.innerHTML = "";
+        MONTHLY_TASKS.forEach((text, idx) => {
+          const id = `m-${idx}`;
+          const done = !!state.monthly[id];
+          const item = document.createElement("div");
+          item.className = "monthly-item" + (done ? " done" : "");
+          item.setAttribute("role", "button");
+          item.setAttribute("tabindex", "0");
+          item.innerHTML = `
+            <div class="checkbox">${checkSvg()}</div>
+            <div class="label"></div>
+          `;
+          item.querySelector(".label").textContent = text;
+          const toggle = () => {
+            state.monthly[id] = !state.monthly[id];
+            if (!state.monthly[id]) delete state.monthly[id];
+            saveState(state);
+            renderMonthly();
+          };
+          item.addEventListener("click", toggle);
+          item.addEventListener("keydown", (e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              toggle();
+            }
+          });
+          monthlyEl.appendChild(item);
+        });
+      }
+
+      renderDays();
+      renderTasks();
+      renderMonthly();
+    })();
+  </script>
+</body>
+</html>
